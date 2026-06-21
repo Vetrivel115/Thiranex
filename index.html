@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ShopEase E-Commerce</title>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial,sans-serif;
+}
+
+body{
+    background:#f4f4f4;
+}
+
+nav{
+    background:#222;
+    color:white;
+    padding:15px 30px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    position:sticky;
+    top:0;
+}
+
+.logo{
+    font-size:24px;
+    font-weight:bold;
+}
+
+.cart-btn{
+    cursor:pointer;
+    font-size:18px;
+}
+
+.controls{
+    display:flex;
+    gap:15px;
+    padding:20px;
+    flex-wrap:wrap;
+}
+
+input,select{
+    padding:10px;
+    border:1px solid #ccc;
+    border-radius:5px;
+}
+
+.products{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+    gap:20px;
+    padding:20px;
+}
+
+.card{
+    background:white;
+    border-radius:10px;
+    overflow:hidden;
+    box-shadow:0 4px 10px rgba(0,0,0,0.1);
+    transition:0.3s;
+}
+
+.card:hover{
+    transform:translateY(-5px);
+}
+
+.card img{
+    width:100%;
+    height:220px;
+    object-fit:cover;
+}
+
+.card-content{
+    padding:15px;
+}
+
+.card-content h3{
+    margin-bottom:10px;
+}
+
+.price{
+    color:green;
+    font-weight:bold;
+    font-size:20px;
+    margin:10px 0;
+}
+
+button{
+    padding:10px;
+    border:none;
+    background:#007bff;
+    color:white;
+    border-radius:5px;
+    cursor:pointer;
+}
+
+button:hover{
+    background:#0056b3;
+}
+
+.cart-sidebar{
+    position:fixed;
+    right:-400px;
+    top:0;
+    width:350px;
+    height:100%;
+    background:white;
+    box-shadow:-5px 0 10px rgba(0,0,0,0.2);
+    transition:0.4s;
+    overflow-y:auto;
+    padding:20px;
+}
+
+.cart-sidebar.active{
+    right:0;
+}
+
+.cart-item{
+    border-bottom:1px solid #ddd;
+    padding:10px 0;
+}
+
+.cart-item button{
+    background:red;
+    margin-top:5px;
+}
+
+.total{
+    font-size:22px;
+    margin-top:20px;
+    font-weight:bold;
+}
+
+.checkout{
+    width:100%;
+    margin-top:15px;
+    background:green;
+}
+
+.close{
+    float:right;
+    background:red;
+}
+
+@media(max-width:768px){
+    .cart-sidebar{
+        width:100%;
+    }
+}
+</style>
+</head>
+<body>
+
+<nav>
+    <div class="logo">🛒 ShopEase</div>
+    <div class="cart-btn" onclick="toggleCart()">
+        Cart (<span id="cartCount">0</span>)
+    </div>
+</nav>
+
+<div class="controls">
+    <input type="text" id="search" placeholder="Search Products">
+    
+    <select id="category">
+        <option value="All">All Categories</option>
+        <option value="Electronics">Electronics</option>
+        <option value="Fashion">Fashion</option>
+        <option value="Accessories">Accessories</option>
+    </select>
+</div>
+
+<div class="products" id="productContainer"></div>
+
+<div class="cart-sidebar" id="cartSidebar">
+    <button class="close" onclick="toggleCart()">X</button>
+    <h2>Your Cart</h2>
+
+    <div id="cartItems"></div>
+
+    <div class="total">
+        Total: ₹<span id="totalPrice">0</span>
+    </div>
+
+    <button class="checkout" onclick="checkout()">
+        Checkout
+    </button>
+</div>
+
+<script>
+
+const products = [
+{
+id:1,
+name:"Wireless Headphones",
+price:1999,
+category:"Electronics",
+image:"https://picsum.photos/300/220?1"
+},
+{
+id:2,
+name:"Smart Watch",
+price:2999,
+category:"Electronics",
+image:"https://picsum.photos/300/220?2"
+},
+{
+id:3,
+name:"Gaming Mouse",
+price:899,
+category:"Accessories",
+image:"https://picsum.photos/300/220?3"
+},
+{
+id:4,
+name:"Sneakers",
+price:2499,
+category:"Fashion",
+image:"https://picsum.photos/300/220?4"
+},
+{
+id:5,
+name:"Backpack",
+price:1499,
+category:"Fashion",
+image:"https://picsum.photos/300/220?5"
+},
+{
+id:6,
+name:"Bluetooth Speaker",
+price:1799,
+category:"Electronics",
+image:"https://picsum.photos/300/220?6"
+}
+];
+
+let cart = JSON.parse(localStorage.getItem("cart")) || [];
+
+function renderProducts(list){
+
+const container =
+document.getElementById("productContainer");
+
+container.innerHTML = "";
+
+list.forEach(product=>{
+
+container.innerHTML += `
+<div class="card">
+<img src="${product.image}">
+<div class="card-content">
+<h3>${product.name}</h3>
+<p>${product.category}</p>
+<div class="price">₹${product.price}</div>
+<button onclick="addToCart(${product.id})">
+Add To Cart
+</button>
+</div>
+</div>
+`;
+
+});
+}
+
+function addToCart(id){
+
+const product =
+products.find(p=>p.id===id);
+
+const existing =
+cart.find(item=>item.id===id);
+
+if(existing){
+existing.qty++;
+}else{
+cart.push({...product,qty:1});
+}
+
+saveCart();
+}
+
+function removeItem(id){
+cart = cart.filter(item=>item.id!==id);
+saveCart();
+}
+
+function saveCart(){
+
+localStorage.setItem(
+"cart",
+JSON.stringify(cart)
+);
+
+updateCart();
+}
+
+function updateCart(){
+
+document.getElementById(
+"cartCount"
+).textContent =
+cart.reduce((a,b)=>a+b.qty,0);
+
+const cartItems =
+document.getElementById("cartItems");
+
+cartItems.innerHTML="";
+
+let total = 0;
+
+cart.forEach(item=>{
+
+total += item.price*item.qty;
+
+cartItems.innerHTML += `
+<div class="cart-item">
+<h4>${item.name}</h4>
+<p>₹${item.price}</p>
+
+<button onclick="changeQty(${item.id},-1)">
+-
+</button>
+
+${item.qty}
+
+<button onclick="changeQty(${item.id},1)">
++
+</button>
+
+<br><br>
+
+<button onclick="removeItem(${item.id})">
+Remove
+</button>
+</div>
+`;
+
+});
+
+document.getElementById(
+"totalPrice"
+).textContent = total;
+}
+
+function changeQty(id,val){
+
+const item =
+cart.find(i=>i.id===id);
+
+if(!item) return;
+
+item.qty += val;
+
+if(item.qty<=0){
+removeItem(id);
+return;
+}
+
+saveCart();
+}
+
+function toggleCart(){
+
+document
+.getElementById("cartSidebar")
+.classList.toggle("active");
+}
+
+function checkout(){
+
+if(cart.length===0){
+alert("Cart is Empty");
+return;
+}
+
+alert("Order Placed Successfully!");
+
+cart = [];
+
+saveCart();
+toggleCart();
+}
+
+document
+.getElementById("search")
+.addEventListener("input",filterProducts);
+
+document
+.getElementById("category")
+.addEventListener("change",filterProducts);
+
+function filterProducts(){
+
+const search =
+document.getElementById("search")
+.value.toLowerCase();
+
+const category =
+document.getElementById("category")
+.value;
+
+const filtered =
+products.filter(product=>{
+
+const matchName =
+product.name
+.toLowerCase()
+.includes(search);
+
+const matchCategory =
+category==="All" ||
+product.category===category;
+
+return matchName &&
+matchCategory;
+
+});
+
+renderProducts(filtered);
+}
+
+renderProducts(products);
+updateCart();
+
+</script>
+
+</body>
+</html>
