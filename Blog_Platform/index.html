@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blog Platform</title>
+
+<style>
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Arial,Helvetica,sans-serif;
+}
+
+body{
+background:#f2f5fa;
+}
+
+header{
+background:#2563eb;
+color:white;
+padding:20px;
+text-align:center;
+font-size:28px;
+font-weight:bold;
+}
+
+.container{
+width:90%;
+max-width:900px;
+margin:auto;
+padding:20px;
+}
+
+.card{
+background:white;
+padding:20px;
+border-radius:10px;
+box-shadow:0 3px 10px rgba(0,0,0,.1);
+margin-bottom:20px;
+}
+
+input,textarea{
+width:100%;
+padding:12px;
+margin-top:10px;
+margin-bottom:15px;
+border:1px solid #ccc;
+border-radius:8px;
+font-size:16px;
+}
+
+textarea{
+height:120px;
+resize:none;
+}
+
+button{
+padding:10px 18px;
+border:none;
+background:#2563eb;
+color:white;
+border-radius:6px;
+cursor:pointer;
+margin-right:8px;
+}
+
+button:hover{
+background:#1d4ed8;
+}
+
+.delete{
+background:#dc2626;
+}
+
+.delete:hover{
+background:#b91c1c;
+}
+
+.edit{
+background:#16a34a;
+}
+
+.edit:hover{
+background:#15803d;
+}
+
+.comment-box{
+margin-top:15px;
+}
+
+.comment{
+background:#eef2ff;
+padding:8px;
+border-radius:6px;
+margin-top:8px;
+}
+
+.like{
+background:#ec4899;
+}
+
+.like:hover{
+background:#db2777;
+}
+
+.hidden{
+display:none;
+}
+
+h2{
+margin-bottom:10px;
+}
+
+.post-title{
+font-size:22px;
+font-weight:bold;
+margin-bottom:10px;
+}
+
+.post-content{
+margin-bottom:15px;
+line-height:1.6;
+}
+
+.footer{
+text-align:center;
+padding:20px;
+color:gray;
+}
+</style>
+
+</head>
+<body>
+
+<header>
+Blog Platform
+</header>
+
+<div class="container">
+
+<div class="card" id="authCard">
+
+<h2>Login</h2>
+
+<input type="text" id="username" placeholder="Enter Username">
+
+<input type="password" id="password" placeholder="Enter Password">
+
+<button onclick="login()">Login</button>
+
+<button onclick="register()">Register</button>
+
+<p id="status"></p>
+
+</div>
+
+<div id="blogSection" class="hidden">
+
+<div class="card">
+
+<h2>Create Blog</h2>
+
+<input type="text" id="title" placeholder="Blog Title">
+
+<textarea id="content" placeholder="Write your blog..."></textarea>
+
+<button onclick="addPost()">Publish</button>
+
+</div>
+
+<div id="posts"></div>
+
+</div>
+
+</div>
+
+<div class="footer">
+Made with ❤️
+</div>
+
+<script>
+
+let posts=JSON.parse(localStorage.getItem("posts"))||[];
+
+let logged=false;
+
+function register(){
+
+let user=document.getElementById("username").value;
+let pass=document.getElementById("password").value;
+
+if(user==""||pass==""){
+alert("Fill all fields");
+return;
+}
+
+localStorage.setItem("user",JSON.stringify({user,pass}));
+
+alert("Registration Successful");
+
+}
+
+function login(){
+
+let data=JSON.parse(localStorage.getItem("user"));
+
+if(!data){
+alert("Register First");
+return;
+}
+
+let user=document.getElementById("username").value;
+let pass=document.getElementById("password").value;
+
+if(user===data.user && pass===data.pass){
+
+logged=true;
+
+document.getElementById("authCard").classList.add("hidden");
+
+document.getElementById("blogSection").classList.remove("hidden");
+
+displayPosts();
+
+}else{
+
+alert("Invalid Credentials");
+
+}
+
+}
+
+function addPost(){
+
+let title=document.getElementById("title").value;
+
+let content=document.getElementById("content").value;
+
+if(title==""||content==""){
+alert("Fill all fields");
+return;
+}
+
+posts.unshift({
+title,
+content,
+likes:0,
+comments:[]
+});
+
+localStorage.setItem("posts",JSON.stringify(posts));
+
+document.getElementById("title").value="";
+
+document.getElementById("content").value="";
+
+displayPosts();
+
+}
+
+function displayPosts(){
+
+let html="";
+
+posts.forEach((post,index)=>{
+
+html+=`
+
+<div class="card">
+
+<div class="post-title">${post.title}</div>
+
+<div class="post-content">${post.content}</div>
+
+<button class="like" onclick="likePost(${index})">
+❤️ ${post.likes}
+</button>
+
+<button class="edit" onclick="editPost(${index})">
+Edit
+</button>
+
+<button class="delete" onclick="deletePost(${index})">
+Delete
+</button>
+
+<div class="comment-box">
+
+<input id="comment${index}" placeholder="Write Comment">
+
+<button onclick="addComment(${index})">
+Comment
+</button>
+
+<div>
+
+${post.comments.map(c=>`<div class="comment">${c}</div>`).join("")}
+
+</div>
+
+</div>
+
+</div>
+
+`;
+
+});
+
+document.getElementById("posts").innerHTML=html;
+
+}
+
+function deletePost(index){
+
+posts.splice(index,1);
+
+localStorage.setItem("posts",JSON.stringify(posts));
+
+displayPosts();
+
+}
+
+function editPost(index){
+
+let title=prompt("Edit Title",posts[index].title);
+
+let content=prompt("Edit Content",posts[index].content);
+
+if(title && content){
+
+posts[index].title=title;
+
+posts[index].content=content;
+
+localStorage.setItem("posts",JSON.stringify(posts));
+
+displayPosts();
+
+}
+
+}
+
+function likePost(index){
+
+posts[index].likes++;
+
+localStorage.setItem("posts",JSON.stringify(posts));
+
+displayPosts();
+
+}
+
+function addComment(index){
+
+let c=document.getElementById("comment"+index).value;
+
+if(c=="") return;
+
+posts[index].comments.push(c);
+
+localStorage.setItem("posts",JSON.stringify(posts));
+
+displayPosts();
+
+}
+
+</script>
+
+</body>
+</html>
